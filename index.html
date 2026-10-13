@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Robótica 1er Grado - Programando al Robot Panda</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Quicksand:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #2563eb;
+            --accent: #f59e0b;
+            --bg: #f0f9ff;
+            --card-bg: #ffffff;
+            --text: #0f172a;
+            --success: #10b981;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Quicksand', sans-serif; }
+        body { background: var(--bg); color: var(--text); padding: 20px; }
+
+        header {
+            text-align: center;
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 20px;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05);
+            margin-bottom: 25px;
+        }
+        header h1 { font-family: 'Fredoka One', cursive; color: var(--primary); font-size: 2.2rem; }
+
+        .main-layout { display: grid; grid-template-columns: 1fr 320px; gap: 20px; }
+        @media (max-width: 850px) { .main-layout { grid-template-columns: 1fr; } }
+
+        .students-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        /* Caja de Alumno */
+        .student-card {
+            background: var(--card-bg);
+            border-radius: 18px;
+            padding: 18px;
+            text-align: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            cursor: pointer;
+            border: 3px solid #e0f2fe;
+            transition: all 0.2s ease;
+        }
+        .student-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--primary);
+            box-shadow: 0 10px 20px rgba(37, 99, 235, 0.15);
+        }
+
+        /* Resaltar Nombre de Pila */
+        .student-firstname {
+            font-family: 'Fredoka One', cursive;
+            font-size: 1.5rem;
+            color: var(--primary);
+            display: block;
+            margin-bottom: 2px;
+        }
+        .student-lastname {
+            font-size: 0.85rem;
+            color: #64748b;
+            font-weight: 700;
+        }
+
+        .progress-bar-bg {
+            background: #e2e8f0;
+            height: 12px;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 12px 0 6px 0;
+        }
+        .progress-bar-fill {
+            background: linear-gradient(90deg, #38bdf8, var(--primary));
+            height: 100%;
+            width: 0%;
+            transition: width 0.4s ease;
+        }
+
+        /* Sidebar / TOP 10 */
+        .sidebar {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05);
+            height: fit-content;
+        }
+        .sidebar h2 { font-family: 'Fredoka One', cursive; color: var(--accent); margin-bottom: 15px; }
+        .top-list { list-style: none; }
+        .top-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 10px 12px; margin-bottom: 8px; border-radius: 12px;
+            background: #f8fafc; font-size: 0.95rem; font-weight: 700;
+        }
+        .top-item:nth-child(1) { background: #fef3c7; color: #b45309; }
+        .top-item:nth-child(2) { background: #f1f5f9; color: #475569; }
+        .top-item:nth-child(3) { background: #ffedd5; color: #c2410c; }
+
+        /* Modal del Juego */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px);
+            display: none; justify-content: center; align-items: center; z-index: 1000; padding: 15px;
+        }
+        .modal-content {
+            background: white; width: 100%; max-width: 650px; max-height: 90vh;
+            border-radius: 24px; overflow-y: auto; padding: 25px; position: relative;
+        }
+        .close-btn {
+            background: #f1f5f9; border: none; width: 38px; height: 38px;
+            border-radius: 50%; font-weight: bold; cursor: pointer; float: right;
+        }
+
+        .q-card { background: #f8fafc; padding: 16px; border-radius: 16px; margin-bottom: 15px; border: 2px solid #e2e8f0; }
+        .q-title { font-weight: 700; font-size: 1.1rem; margin-bottom: 10px; }
+        .option-btn {
+            display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+            background: white; border: 2px solid #cbd5e1; border-radius: 12px;
+            margin-bottom: 8px; cursor: pointer; font-size: 1rem; font-weight: 700;
+        }
+        .option-btn input { accent-color: var(--primary); width: 20px; height: 20px; }
+
+        .btn-submit {
+            width: 100%; background: var(--primary); color: white; border: none;
+            padding: 14px; border-radius: 14px; font-family: 'Fredoka One', cursive;
+            font-size: 1.2rem; cursor: pointer; margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>🤖 ¡Programando al Robot Panda!</h1>
+        <p>Selecciona tu nombre para completar el camino en mBlock</p>
+    </header>
+
+    <div class="main-layout">
+        <div class="students-grid" id="studentsGrid"></div>
+
+        <div class="sidebar">
+            <h2>🏆 TOP 10 Mejores Puntos</h2>
+            <ul class="top-list" id="topList">
+                <li style="text-align: center; color: #94a3b8;">Cargando lista...</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- Modal del Cuestionario / Juego -->
+<div class="modal-overlay" id="quizModal">
+    <div class="modal-content">
+        <button class="close-btn" onclick="closeQuiz()">✕</button>
+        <h2 id="modalStudentName" style="font-family: 'Fredoka One', cursive; color: var(--primary); margin-bottom: 5px;">Alumno</h2>
+        <p style="color: #64748b; font-size: 0.9rem; margin-bottom: 20px;" id="modalStudentAttempts">Intentos: 0</p>
+
+        <div id="quizContainer">
+            <form id="quizForm"></form>
+            <button class="btn-submit" onclick="submitQuiz(event)">¡Enviar Respuestas! 🚀</button>
+        </div>
+
+        <div id="resultsBox" style="display:none; text-align:center; padding: 20px;">
+            <h2 style="font-family: 'Fredoka One', cursive; color: var(--success); font-size: 2rem;">🎉 ¡Excelente Trabajo!</h2>
+            <div id="scoreDisplay" style="font-size: 3rem; font-weight: 800; color: var(--primary); margin: 15px 0;">0 / 5</div>
+            <p id="feedbackDisplay" style="color: #64748b; font-size: 1.1rem; margin-bottom: 20px;"></p>
+            <button class="btn-submit" onclick="resetQuizView()" style="background: var(--accent);">Intentar de nuevo 🔄</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 🔗 URL de tu Google Apps Script (Sustituir cuando lo tengas creado)
+    const GOOGLE_SHEET_WEB_APP_URL = "URL_DE_TU_GOOGLE_APPS_SCRIPT_AQUI";
+
+    // Lista de Alumnos de 1er Grado
+    const initialStudents = [
+        {"name": "Octavio", "lastname": "Alegria Flores"},
+        {"name": "Mikel", "lastname": "Broca Hernández"},
+        {"name": "Montserrat", "lastname": "Campos Lanestoza"},
+        {"name": "Mia Alexandra", "lastname": "Del Rivero Cortés"},
+        {"name": "Dylan Leonel", "lastname": "Gómez González"},
+        {"name": "Samuel Guillem", "lastname": "Guzmán Sánchez"},
+        {"name": "Mario Antonio", "lastname": "Hernández Villalpando"},
+        {"name": "Miranda Isabella", "lastname": "Izquierdo Zentella"},
+        {"name": "Carlos Fernando", "lastname": "López Morales"},
+        {"name": "Amber Arleth", "lastname": "Mayo Brito"},
+        {"name": "Luis Adrián", "lastname": "Pérez García"},
+        {"name": "Carlos Eduardo", "lastname": "Ramos Hernández"},
+        {"name": "Paola Monserrat", "lastname": "Salas Palancares"},
+        {"name": "Sergio Josué", "lastname": "Salgado Olvera"},
+        {"name": "Damián", "lastname": "Sánchez Cisneros"},
+        {"name": "Luna Daniela", "lastname": "Torres Cortés"},
+        {"name": "Máximo Fernando", "lastname": "Vidal Broca"}
+    ];
+
+    // Preguntas con enfoque gráfico y básico de mBlock para 1º Grado
+    const questions = [
+        {
+            "q": "1. 🟢 ¿Qué bloque usamos para INICIAR el programa del Panda en mBlock?",
+            "options": ["Al hacer clic en la bandera verde 🟢", "Presionar la tecla Espacio ⌨️", "Apagar la pantalla 🔴"],
+            "answer": 0
+        },
+        {
+            "q": "2. ⬆️ El Robot Panda necesita dar 2 pasos al frente. ¿Qué instrucción le das?",
+            "options": ["Mover 2 pasos ⬆️", "Girar en círculos 🔄", "Detenerse 🛑"],
+            "answer": 0
+        },
+        {
+            "q": "3. ➡️ El Panda llegó a una esquina y debe dar vuelta a la derecha. ¿Cuál bloque usas?",
+            "options": ["Girar a la izquierda ⬅️", "Girar a la derecha ➡️", "Retroceder ⬇️"],
+            "answer": 1
+        },
+        {
+            "q": "4. 🔊 ¿Qué bloque mBlock hace que el robot emita un sonido alegre?",
+            "options": ["Tocar sonido Beep 🔊", "Mover 10 pasos 👣", "Cambiar disfraz 🎨"],
+            "answer": 0
+        },
+        {
+            "q": "5. 🔍 ¿Qué pasa si le damos las instrucciones en orden equivocado al robot?",
+            "options": ["El robot lo adivina solo 🧠", "El robot choca o comete un error 💥", "No pasa nada"],
+            "answer": 1
+        }
+    ];
+
+    let studentState = [];
+    let currentStudentIndex = null;
+
+    async function loadScoresFromSheet() {
+        try {
+            if (GOOGLE_SHEET_WEB_APP_URL && GOOGLE_SHEET_WEB_APP_URL !== "URL_DE_TU_GOOGLE_APPS_SCRIPT_AQUI") {
+                const res = await fetch(GOOGLE_SHEET_WEB_APP_URL);
+                const data = await res.json();
+                studentState = initialStudents.map(st => {
+                    const match = data.find(d => d.name === st.name && d.lastname === st.lastname);
+                    return {
+                        name: st.name,
+                        lastname: st.lastname,
+                        bestScore: match ? match.bestScore : 0,
+                        attempts: match ? match.attempts : 0
+                    };
+                });
+            } else {
+                useLocalStorageFallback();
+            }
+        } catch (e) {
+            useLocalStorageFallback();
+        }
+        renderStudents();
+    }
+
+    function useLocalStorageFallback() {
+        const saved = localStorage.getItem('robotics_1st_grade_data');
+        if (saved) {
+            studentState = JSON.parse(saved);
+        } else {
+            studentState = initialStudents.map(s => ({ name: s.name, lastname: s.lastname, bestScore: 0, attempts: 0 }));
+        }
+    }
+
+    async function sendScoreToSheet(name, lastname, score) {
+        localStorage.setItem('robotics_1st_grade_data', JSON.stringify(studentState));
+        if (GOOGLE_SHEET_WEB_APP_URL && GOOGLE_SHEET_WEB_APP_URL !== "URL_DE_TU_GOOGLE_APPS_SCRIPT_AQUI") {
+            try {
+                await fetch(GOOGLE_SHEET_WEB_APP_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: name, lastname: lastname, score: score })
+                });
+            } catch (e) { console.error("Error al enviar a Google Sheet:", e); }
+        }
+    }
+
+    function renderStudents() {
+        const grid = document.getElementById('studentsGrid');
+        grid.innerHTML = '';
+
+        studentState.forEach((st, idx) => {
+            const pct = (st.bestScore / questions.length) * 100;
+            const card = document.createElement('div');
+            card.className = 'student-card';
+            card.onclick = () => openQuiz(idx);
+
+            card.innerHTML = `
+                <span class="student-firstname">${st.name}</span>
+                <span class="student-lastname">${st.lastname}</span>
+                <div class="progress-bar-bg">
+                    <div class="progress-bar-fill" style="width: ${pct}%;"></div>
+                </div>
+                <div style="font-size:0.8rem; color:#64748b; font-weight:700;">
+                    Puntos: ${st.bestScore}/${questions.length} | ${st.attempts} int.
+                </div>
+            `;
+            grid.appendChild(card);
+        });
+        renderTop10();
+    }
+
+    function renderTop10() {
+        const topList = document.getElementById('topList');
+        topList.innerHTML = '';
+        const sorted = [...studentState].sort((a, b) => b.bestScore - a.bestScore || a.attempts - b.attempts).slice(0, 10);
+
+        sorted.forEach((st, index) => {
+            const item = document.createElement('li');
+            item.className = 'top-item';
+            item.innerHTML = `
+                <div>${index + 1}. ${st.name}</div>
+                <div>${st.bestScore} pts</div>
+            `;
+            topList.appendChild(item);
+        });
+    }
+
+    function openQuiz(index) {
+        currentStudentIndex = index;
+        const st = studentState[index];
+        document.getElementById('modalStudentName').textContent = `${st.name} ${st.lastname}`;
+        document.getElementById('modalStudentAttempts').textContent = `Intentos realizados: ${st.attempts}`;
+        document.getElementById('quizContainer').style.display = 'block';
+        document.getElementById('resultsBox').style.display = 'none';
+
+        const form = document.getElementById('quizForm');
+        form.innerHTML = '';
+
+        questions.forEach((q, qIdx) => {
+            const qDiv = document.createElement('div');
+            qDiv.className = 'q-card';
+            let optionsHTML = '';
+            q.options.forEach((opt, optIdx) => {
+                optionsHTML += `
+                    <label class="option-btn">
+                        <input type="radio" name="q_${qIdx}" value="${optIdx}" required>
+                        ${opt}
+                    </label>
+                `;
+            });
+            qDiv.innerHTML = `<div class="q-title">${q.q}</div>${optionsHTML}`;
+            form.appendChild(qDiv);
+        });
+
+        document.getElementById('quizModal').style.display = 'flex';
+    }
+
+    function closeQuiz() { document.getElementById('quizModal').style.display = 'none'; }
+
+    async function submitQuiz(e) {
+        e.preventDefault();
+        const form = document.getElementById('quizForm');
+        let score = 0;
+
+        questions.forEach((q, qIdx) => {
+            const selected = form.querySelector(`input[name="q_${qIdx}"]:checked`);
+            if (selected && parseInt(selected.value) === q.answer) score++;
+        });
+
+        const st = studentState[currentStudentIndex];
+        st.attempts += 1;
+        if (score > st.bestScore) st.bestScore = score;
+
+        renderStudents();
+        await sendScoreToSheet(st.name, st.lastname, score);
+
+        document.getElementById('quizContainer').style.display = 'none';
+        document.getElementById('resultsBox').style.display = 'block';
+        document.getElementById('scoreDisplay').textContent = `${score} / ${questions.length}`;
+
+        const feedback = document.getElementById('feedbackDisplay');
+        if (score === questions.length) feedback.textContent = '🌟 ¡Excelente! ¡Eres un súper programador!';
+        else feedback.textContent = '👍 ¡Muy bien! Sigue practicando para completar el camino.';
+    }
+
+    function resetQuizView() { openQuiz(currentStudentIndex); }
+
+    loadScoresFromSheet();
+</script>
+</body>
+</html>
